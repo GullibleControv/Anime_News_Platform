@@ -1,0 +1,13 @@
+# Ignore the virtual environment (Heavy files)
+venv/
+.venv/
+
+# Ignore compiled python files (Junk)
+__pycache__/
+*.pyc
+
+# Ignore the database (Because it changes often and is binary)
+db.sqlite3
+
+# Ignore sensitive settings (Optional for now, but good practice)
+.env
