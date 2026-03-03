@@ -11,3 +11,5 @@ db.sqlite3
 
 # Ignore sensitive settings (Optional for now, but good practice)
 .env
+# Windows artifacts
+nul
