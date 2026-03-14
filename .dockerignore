@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.docker/
+
+# Project specific
+.claude/
+learning/
+*.md
+!README.md
+db.sqlite3
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
