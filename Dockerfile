@@ -1,7 +1,6 @@
 # ============================================================
 # Dockerfile for Anime News Platform
 # ============================================================
-# Using Python 3.12 (more stable package compatibility)
 FROM python:3.12-slim
 
 LABEL maintainer="your-email@example.com"
@@ -33,8 +32,15 @@ COPY . .
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Collect static files
+# Collect static files (set dummy env vars for build time)
+ENV SECRET_KEY=build-time-secret-key
+ENV ALLOWED_HOSTS=localhost
+ENV DEBUG=False
 RUN python manage.py collectstatic --noinput
+
+# Clear the build-time env vars (they'll be set properly at runtime)
+ENV SECRET_KEY=
+ENV ALLOWED_HOSTS=
 
 # Create non-root user (security best practice)
 RUN adduser --disabled-password --gecos '' appuser && \
