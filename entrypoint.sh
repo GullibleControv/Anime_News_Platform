@@ -2,30 +2,21 @@
 # ============================================================
 # Entrypoint Script for Anime News Platform
 # ============================================================
-# This script runs when the container starts, BEFORE the main
-# application. It's useful for:
-#   - Waiting for database to be ready
-#   - Running migrations
-#   - Any other startup tasks
-# ============================================================
 
 set -e  # Exit immediately if any command fails
 
 # ------------------------------------------------------------
-# WAIT FOR DATABASE (if using PostgreSQL)
+# COLLECT STATIC FILES
 # ------------------------------------------------------------
-# When using docker-compose, the database container might take
-# a few seconds to start. This loop waits until PostgreSQL is
-# ready to accept connections.
+echo "Collecting static files..."
+python manage.py collectstatic --noinput
+
+# ------------------------------------------------------------
+# WAIT FOR DATABASE (if using PostgreSQL)
 # ------------------------------------------------------------
 if [ -n "$DATABASE_URL" ]; then
     echo "Waiting for PostgreSQL to be ready..."
     
-    # Extract host and port from DATABASE_URL
-    # Example: postgresql://user:pass@db:5432/dbname
-    # We need to check if 'db:5432' is accepting connections
-    
-    # Simple wait loop (max 30 seconds)
     for i in {1..30}; do
         python << END
 import sys
@@ -58,21 +49,11 @@ fi
 # ------------------------------------------------------------
 # RUN DATABASE MIGRATIONS
 # ------------------------------------------------------------
-# Apply any pending database migrations.
-# This ensures your database schema is up to date.
-# ------------------------------------------------------------
 echo "Running database migrations..."
 python manage.py migrate --noinput
 
 # ------------------------------------------------------------
 # EXECUTE MAIN COMMAND
-# ------------------------------------------------------------
-# "$@" passes all arguments to this script to the next command.
-# This allows docker-compose to override the default CMD.
-#
-# Example:
-#   CMD ["gunicorn", ...] in Dockerfile
-#   becomes the $@ here
 # ------------------------------------------------------------
 echo "Starting application..."
 exec "$@"

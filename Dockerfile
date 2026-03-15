@@ -32,16 +32,6 @@ COPY . .
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Collect static files (set dummy env vars for build time)
-ENV SECRET_KEY=build-time-secret-key
-ENV ALLOWED_HOSTS=localhost
-ENV DEBUG=False
-RUN python manage.py collectstatic --noinput
-
-# Clear the build-time env vars (they'll be set properly at runtime)
-ENV SECRET_KEY=
-ENV ALLOWED_HOSTS=
-
 # Create non-root user (security best practice)
 RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
@@ -50,10 +40,6 @@ USER appuser
 
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/admin/ || exit 1
-
-# Entrypoint and command
+# Entrypoint runs collectstatic + migrations, then starts gunicorn
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "core.wsgi:application"]
