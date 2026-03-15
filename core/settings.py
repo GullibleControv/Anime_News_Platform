@@ -26,9 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY: Secret key loaded from environment variable
-SECRET_KEY = os.getenv('SECRET_KEY')
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY environment variable is not set. Check your .env file.")
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-build-key-replace-in-production')
 
 # SECURITY: Debug mode controlled by environment variable
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
