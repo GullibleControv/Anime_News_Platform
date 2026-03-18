@@ -1,58 +1,303 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <meta charset="UTF-8" />
-    <title>Anime News Hub</title>
-  </head>
-  <body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark mb-4">
-      <div class="container">
-        <a class="navbar-brand" href="#">🇯🇵 Anime News Hub</a>
-      </div>
-    </nav>
+{% extends 'news/base.html' %}
+{% load static %}
 
-    <div class="container">
-      <div class="row">
-        {% for article in articles %}
-        <div class="col-md-4 mb-4">
-          <div class="card shadow-sm h-100">
-            {% if article.image_url %}
-            <img
-              src="{{ article.image_url }}"
-              class="card-img-top"
-              alt="Anime Image"
-              style="height: 200px; object-fit: cover"
-            />
-            {% endif %}
+{% block title %}Anime News Hub - Latest Anime News & Updates{% endblock %}
 
-            <div class="card-body">
-              <span class="badge bg-primary mb-2"
-                >{{ article.get_category_display }}</span
-              >
+{% block meta_description %}Stay updated with the latest anime news, reviews, merchandise updates, and event coverage. Your one-stop destination for all things anime.{% endblock %}
 
-              <h5 class="card-title">{{ article.title }}</h5>
-              <p class="card-text text-muted">
-                {{ article.content|truncatewords:20 }}
-              </p>
+{% block content %}
+<div class="container">
+    <!-- Featured Hero Section -->
+    {% if featured_article %}
+    <section class="hero-featured" x-data>
+        {% if featured_article.image_url %}
+        <img src="{{ featured_article.image_url }}"
+             alt="{{ featured_article.title }}"
+             class="hero-featured__image"
+             loading="eager">
+        {% else %}
+        <div class="hero-featured__image" style="background: var(--gradient-card);"></div>
+        {% endif %}
+        <div class="hero-featured__overlay"></div>
+        <div class="hero-featured__content">
+            <div class="hero-featured__badge">
+                <span class="hero-featured__featured-tag">Featured</span>
+                <span class="badge badge--{{ featured_article.category|lower }}">
+                    {{ featured_article.get_category_display }}
+                </span>
             </div>
-            <div class="card-footer bg-white border-top-0">
-              <small class="text-muted"
-                >Published: {{ article.published_date|date:"M d, Y" }}</small
-              >
-              <a
-                href="{% url 'detail' article.id %}"
-                class="btn btn-sm btn-primary float-end"
-                >Read More</a
-              >
+            <h1 class="hero-featured__title">
+                <a href="{% url 'detail' featured_article.id %}"
+                   hx-get="{% url 'detail' featured_article.id %}"
+                   hx-target="body"
+                   hx-swap="innerHTML transition:true"
+                   hx-push-url="true">
+                    {{ featured_article.title }}
+                </a>
+            </h1>
+            <p class="hero-featured__excerpt">
+                {{ featured_article.content|truncatewords:40 }}
+            </p>
+            <div class="hero-featured__meta">
+                <span class="hero-featured__meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {{ featured_article.published_date|date:"M d, Y" }}
+                </span>
+                <span class="hero-featured__meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    {{ featured_article.reading_time }} min read
+                </span>
+                <span class="hero-featured__meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    {{ featured_article.view_count }} views
+                </span>
             </div>
-          </div>
         </div>
-        {% endfor %}
-      </div>
+    </section>
+    {% endif %}
+
+    <!-- Stats Section -->
+    <section class="stats-section" x-data="{ shown: false }" x-intersect="shown = true">
+        <div class="stat-card">
+            <div class="stat-card__icon">📰</div>
+            <div class="stat-card__number" x-data="animatedCounter({{ total_articles }})" x-text="displayed"></div>
+            <div class="stat-card__label">Articles</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">👁️</div>
+            <div class="stat-card__number" x-data="animatedCounter({{ total_views }})" x-text="displayed"></div>
+            <div class="stat-card__label">Total Views</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">📂</div>
+            <div class="stat-card__number" x-data="animatedCounter({{ total_categories }})" x-text="displayed"></div>
+            <div class="stat-card__label">Categories</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">🔥</div>
+            <div class="stat-card__number" x-data="animatedCounter({{ trending_articles|length }})" x-text="displayed"></div>
+            <div class="stat-card__label">Trending</div>
+        </div>
+    </section>
+
+    <!-- Main Layout with Sidebar -->
+    <div class="main-layout">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Section Header -->
+            <div class="section-header">
+                <h2 class="section-header__title">
+                    <span class="section-header__icon">📺</span>
+                    Latest News
+                </h2>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="category-tabs" x-data="categoryFilter('{{ current_category|default:'all' }}')">
+                <button
+                    class="category-tab"
+                    :class="{ 'active': isActive('all') }"
+                    @click="setCategory('all')"
+                    hx-get="{% url 'home' %}"
+                    hx-target="#article-list"
+                    hx-swap="innerHTML transition:true"
+                    hx-push-url="true">
+                    All
+                </button>
+                {% for cat_value, cat_label in categories %}
+                <button
+                    class="category-tab"
+                    :class="{ 'active': isActive('{{ cat_value }}') }"
+                    @click="setCategory('{{ cat_value }}')"
+                    hx-get="{% url 'home' %}?category={{ cat_value }}"
+                    hx-target="#article-list"
+                    hx-swap="innerHTML transition:true"
+                    hx-push-url="true">
+                    {{ cat_label }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Article List -->
+            <section id="article-list">
+                {% include 'news/partials/_article_list.html' %}
+            </section>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Trending Articles -->
+            <div class="sidebar-card">
+                <div class="sidebar-card__header">
+                    <span class="sidebar-card__icon">🔥</span>
+                    <h3 class="sidebar-card__title">Trending Now</h3>
+                </div>
+                {% for article in trending_articles %}
+                <div class="sidebar-item">
+                    <span class="sidebar-item__rank">{{ forloop.counter }}</span>
+                    <div class="sidebar-item__content">
+                        <h4 class="sidebar-item__title">
+                            <a href="{% url 'detail' article.id %}"
+                               hx-get="{% url 'detail' article.id %}"
+                               hx-target="body"
+                               hx-swap="innerHTML transition:true"
+                               hx-push-url="true">
+                                {{ article.title }}
+                            </a>
+                        </h4>
+                        <div class="sidebar-item__meta">
+                            <span>{{ article.view_count }} views</span>
+                            <span>{{ article.reading_time }} min</span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p style="color: var(--text-muted); font-size: var(--text-sm);">No trending articles yet.</p>
+                {% endfor %}
+            </div>
+
+            <!-- Recent Articles -->
+            <div class="sidebar-card">
+                <div class="sidebar-card__header">
+                    <span class="sidebar-card__icon">🕐</span>
+                    <h3 class="sidebar-card__title">Recent Posts</h3>
+                </div>
+                {% for article in recent_articles %}
+                <div class="sidebar-item">
+                    {% if article.image_url %}
+                    <img src="{{ article.image_url }}"
+                         alt="{{ article.title }}"
+                         class="sidebar-item__image"
+                         loading="lazy">
+                    {% endif %}
+                    <div class="sidebar-item__content">
+                        <h4 class="sidebar-item__title">
+                            <a href="{% url 'detail' article.id %}"
+                               hx-get="{% url 'detail' article.id %}"
+                               hx-target="body"
+                               hx-swap="innerHTML transition:true"
+                               hx-push-url="true">
+                                {{ article.title }}
+                            </a>
+                        </h4>
+                        <div class="sidebar-item__meta">
+                            <span>{{ article.published_date|timesince }} ago</span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p style="color: var(--text-muted); font-size: var(--text-sm);">No recent articles yet.</p>
+                {% endfor %}
+            </div>
+
+            <!-- Newsletter Subscription -->
+            <div class="newsletter" x-data="newsletterForm()">
+                <div class="newsletter__icon">✉️</div>
+                <h3 class="newsletter__title">Stay Updated</h3>
+                <p class="newsletter__text">Get the latest anime news delivered to your inbox weekly.</p>
+                <form class="newsletter__form" @submit.prevent="subscribe">
+                    <input type="email"
+                           x-model="email"
+                           class="newsletter__input"
+                           placeholder="Enter your email"
+                           required>
+                    <button type="submit" class="newsletter__btn" :disabled="loading">
+                        <span x-show="!loading">Subscribe</span>
+                        <span x-show="loading">...</span>
+                    </button>
+                </form>
+                <p x-show="message" x-text="message" class="newsletter__success" x-cloak></p>
+            </div>
+        </aside>
     </div>
-  </body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animated Counter Component
+function animatedCounter(target) {
+    return {
+        current: 0,
+        target: target,
+        displayed: '0',
+        init() {
+            this.$nextTick(() => {
+                this.animateValue();
+            });
+        },
+        animateValue() {
+            const duration = 1500;
+            const steps = 60;
+            const stepDuration = duration / steps;
+            const increment = this.target / steps;
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= this.target) {
+                    this.displayed = this.formatNumber(this.target);
+                    clearInterval(timer);
+                } else {
+                    this.displayed = this.formatNumber(Math.floor(current));
+                }
+            }, stepDuration);
+        },
+        formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+    }
+}
+
+// Newsletter Form Component
+function newsletterForm() {
+    return {
+        email: '',
+        loading: false,
+        message: '',
+        async subscribe() {
+            this.loading = true;
+            this.message = '';
+
+            try {
+                const response = await fetch('{% url "subscribe" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: `email=${encodeURIComponent(this.email)}`
+                });
+
+                const data = await response.json();
+                this.message = data.message || data.error;
+
+                if (data.success) {
+                    this.email = '';
+                }
+            } catch (error) {
+                this.message = 'Something went wrong. Please try again.';
+            }
+
+            this.loading = false;
+        }
+    }
+}
+</script>
+{% endblock %}

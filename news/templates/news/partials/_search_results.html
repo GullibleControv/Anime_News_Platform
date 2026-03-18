@@ -1,0 +1,53 @@
+{% if query %}
+    {% if articles %}
+    <div style="padding: var(--space-4);">
+        <p class="text-muted" style="font-size: var(--text-xs); margin-bottom: var(--space-4);">
+            Found {{ articles|length }} result{{ articles|pluralize }} for "{{ query }}"
+        </p>
+        {% for article in articles %}
+        <a href="{% url 'detail' article.id %}"
+           class="search-result-item"
+           hx-get="{% url 'detail' article.id %}"
+           hx-target="#main-content"
+           hx-swap="innerHTML transition:true"
+           hx-push-url="true"
+           style="display: flex; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); text-decoration: none; color: inherit; transition: background var(--transition-fast);"
+           onmouseover="this.style.background='var(--bg-tertiary)'"
+           onmouseout="this.style.background='transparent'">
+            {% if article.image_url %}
+            <img src="{{ article.image_url }}"
+                 alt=""
+                 style="width: 60px; height: 45px; object-fit: cover; border-radius: var(--radius-sm); flex-shrink: 0;">
+            {% endif %}
+            <div style="flex: 1; min-width: 0;">
+                <h4 style="font-size: var(--text-sm); font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ article.title }}
+                </h4>
+                <div style="display: flex; gap: var(--space-2); align-items: center;">
+                    <span class="badge badge--{{ article.category|lower }}" style="font-size: 0.65rem; padding: 2px 8px;">
+                        {{ article.get_category_display }}
+                    </span>
+                    <span style="font-size: var(--text-xs); color: var(--text-muted);">
+                        {{ article.published_date|date:"M d" }}
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+
+        {% if articles|length >= 5 %}
+        <div style="padding: var(--space-3); text-align: center; border-top: 1px solid var(--border-color); margin-top: var(--space-3);">
+            <a href="{% url 'search' %}?q={{ query }}"
+               class="text-accent"
+               style="font-size: var(--text-sm);">
+                View all results →
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div style="padding: var(--space-6); text-align: center; color: var(--text-muted);">
+        <p>No results found for "{{ query }}"</p>
+    </div>
+    {% endif %}
+{% endif %}

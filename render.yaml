@@ -1,36 +1,52 @@
-# =================================================================
-# Render Blueprint - Anime News Platform
-# =================================================================
-# This file tells Render how to deploy your application
-# Render reads this and automatically sets everything up
-# =================================================================
+# Render deployment configuration
+# https://render.com/docs/blueprint-spec
 
 databases:
-  # PostgreSQL Database (Free tier)
   - name: anime-news-db
+    plan: free
     databaseName: anime_news
-    user: anime_user
-    plan: free  # Free tier!
+    user: anime_news_user
 
 services:
-  # Django Web Service
   - type: web
-    name: anime-news-platform
-    plan: free  # Free tier!
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    name: anime-news-hub
+    plan: free
+    runtime: python
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate --noinput
+    startCommand: gunicorn core.wsgi:application
     envVars:
-      # Secret key - Render generates this automatically
-      - key: SECRET_KEY
-        generateValue: true
-      # Debug off for production
-      - key: DEBUG
-        value: "False"
-      # Allowed hosts - Render provides the hostname
-      - key: ALLOWED_HOSTS
-        value: ".onrender.com"
-      # Database URL - automatically linked to the database above
       - key: DATABASE_URL
         fromDatabase:
           name: anime-news-db
           property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+  # Background worker for scheduled news fetching
+  - type: worker
+    name: anime-news-scheduler
+    plan: free
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py runapscheduler --interval=6
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: anime-news-db
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: anime-news-hub
+          envVarKey: SECRET_KEY
+      - key: DEBUG
+        value: "False"

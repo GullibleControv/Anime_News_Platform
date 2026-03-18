@@ -1,0 +1,88 @@
+{% extends 'news/base.html' %}
+{% load static %}
+
+{% block title %}My Bookmarks - Anime News Hub{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {{ user.username|slice:":1"|upper }}
+        </div>
+        <h1 class="profile-name">{{ user.username }}</h1>
+        <p class="profile-stats">{{ bookmark_count }} bookmarked article{{ bookmark_count|pluralize }}</p>
+    </div>
+
+    <!-- Bookmarks Section -->
+    <div class="section-header">
+        <h2 class="section-header__title">
+            <span class="section-header__icon">📚</span>
+            My Bookmarks
+        </h2>
+    </div>
+
+    {% if bookmarks %}
+    <div class="bookmarks-grid">
+        {% for bookmark in bookmarks %}
+        <div class="card">
+            {% if bookmark.article.image_url %}
+            <div class="card__image-wrapper">
+                <img
+                    src="{{ bookmark.article.image_url }}"
+                    alt="{{ bookmark.article.title }}"
+                    class="card__image"
+                    loading="lazy"
+                >
+                <div class="card__category">
+                    <span class="badge badge--{{ bookmark.article.category|lower }}">
+                        {{ bookmark.article.get_category_display }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+            <div class="card__content">
+                <h3 class="card__title">{{ bookmark.article.title }}</h3>
+                <p class="card__excerpt">{{ bookmark.article.content|truncatewords:20 }}</p>
+            </div>
+            <div class="card__footer">
+                <span class="card__date">Saved {{ bookmark.created_at|timesince }} ago</span>
+                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <a href="{% url 'detail' bookmark.article.id %}"
+                       class="card__link"
+                       hx-get="{% url 'detail' bookmark.article.id %}"
+                       hx-target="body"
+                       hx-swap="innerHTML transition:true"
+                       hx-push-url="true">
+                        Read
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14"/>
+                            <path d="m12 5 7 7-7 7"/>
+                        </svg>
+                    </a>
+                    <button class="bookmark-btn bookmarked"
+                            hx-post="{% url 'toggle_bookmark' bookmark.article.id %}"
+                            hx-target="closest .card"
+                            hx-swap="outerHTML"
+                            title="Remove bookmark">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state__icon">📖</div>
+        <h3 class="empty-state__title">No Bookmarks Yet</h3>
+        <p class="empty-state__text">Start bookmarking articles to save them for later!</p>
+        <a href="{% url 'home' %}" class="btn btn--primary" style="margin-top: var(--space-6);">
+            Browse Articles
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

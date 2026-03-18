@@ -1,0 +1,63 @@
+{% if page_obj.has_other_pages %}
+<nav class="pagination" aria-label="Article pagination">
+    <!-- Previous Button -->
+    {% if page_obj.has_previous %}
+    <button
+        class="pagination__btn"
+        hx-get="?page={{ page_obj.previous_page_number }}{% if current_category and current_category != 'all' %}&category={{ current_category }}{% endif %}"
+        hx-target="#article-list"
+        hx-swap="innerHTML transition:true"
+        hx-push-url="true"
+        aria-label="Previous page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 18l-6-6 6-6"/>
+        </svg>
+    </button>
+    {% else %}
+    <button class="pagination__btn" disabled aria-label="Previous page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 18l-6-6 6-6"/>
+        </svg>
+    </button>
+    {% endif %}
+
+    <!-- Page Numbers -->
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <button class="pagination__btn active" aria-current="page">{{ num }}</button>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <button
+            class="pagination__btn"
+            hx-get="?page={{ num }}{% if current_category and current_category != 'all' %}&category={{ current_category }}{% endif %}"
+            hx-target="#article-list"
+            hx-swap="innerHTML transition:true"
+            hx-push-url="true">
+            {{ num }}
+        </button>
+        {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+        <span class="pagination__ellipsis" style="color: var(--text-muted);">...</span>
+        {% endif %}
+    {% endfor %}
+
+    <!-- Next Button -->
+    {% if page_obj.has_next %}
+    <button
+        class="pagination__btn"
+        hx-get="?page={{ page_obj.next_page_number }}{% if current_category and current_category != 'all' %}&category={{ current_category }}{% endif %}"
+        hx-target="#article-list"
+        hx-swap="innerHTML transition:true"
+        hx-push-url="true"
+        aria-label="Next page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+        </svg>
+    </button>
+    {% else %}
+    <button class="pagination__btn" disabled aria-label="Next page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+        </svg>
+    </button>
+    {% endif %}
+</nav>
+{% endif %}

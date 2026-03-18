@@ -1,5 +1,5 @@
 # Core Django
-Django>=4.2,<5.0
+Django>=4.2
 gunicorn>=21.0.0
 psycopg2-binary>=2.9.0
 
@@ -8,7 +8,29 @@ dj-database-url>=2.0.0
 python-dotenv>=1.0.0
 whitenoise>=6.6.0
 
+# Authentication
+django-allauth>=65.0.0
+
+# Scheduling
+django-apscheduler>=0.7.0
+
+# Web scraping
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# Security
+django-ratelimit>=4.1.0
+
 # Other dependencies
 requests>=2.31.0
 sqlparse>=0.4.0
 asgiref>=3.7.0
+
+# Testing
+pytest>=7.4.0
+pytest-django>=4.5.0
+pytest-cov>=4.1.0
+factory-boy>=3.3.0
+
+# Logging
+python-json-logger>=2.0.0

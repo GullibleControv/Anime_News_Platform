@@ -1,0 +1,199 @@
+{% extends 'news/base.html' %}
+{% load static %}
+
+{% block title %}Create Account - Anime News Hub{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="auth-title">Join Anime News Hub</h1>
+                <p class="auth-subtitle">Create an account to bookmark articles and personalize your feed</p>
+            </div>
+
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="auth-error">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="id_username" class="form-label">Username</label>
+                    <input type="text"
+                           name="username"
+                           id="id_username"
+                           class="form-input"
+                           placeholder="Choose a username"
+                           value="{{ form.username.value|default:'' }}"
+                           required
+                           autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_email" class="form-label">Email</label>
+                    <input type="email"
+                           name="email"
+                           id="id_email"
+                           class="form-input"
+                           placeholder="Enter your email"
+                           value="{{ form.email.value|default:'' }}"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password1" class="form-label">Password</label>
+                    <input type="password"
+                           name="password1"
+                           id="id_password1"
+                           class="form-input"
+                           placeholder="Create a password"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password2" class="form-label">Confirm Password</label>
+                    <input type="password"
+                           name="password2"
+                           id="id_password2"
+                           class="form-input"
+                           placeholder="Confirm your password"
+                           required>
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--full">
+                    Create Account
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a href="{% url 'account_login' %}">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: var(--space-8) 0;
+}
+
+.auth-card {
+    background: var(--gradient-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-10);
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.auth-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: var(--space-2);
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.form-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-input {
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.15);
+}
+
+.form-input::placeholder {
+    color: var(--text-muted);
+}
+
+.btn--full {
+    width: 100%;
+    padding: var(--space-4);
+    font-size: var(--text-base);
+}
+
+.auth-error {
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid var(--accent-error);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    color: var(--accent-error);
+    font-size: var(--text-sm);
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-color);
+}
+
+.auth-footer p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.auth-footer a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

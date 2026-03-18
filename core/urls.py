@@ -1,9 +1,12 @@
-from django.contrib import admin  
-from django.urls import path
-from news.views import home, detail
+from django.contrib import admin
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', home, name='home'),
-    path('article/<int:article_id>/', detail, name='detail'),
+    path('accounts/', include('allauth.urls')),
+    path('', include('news.urls')),
 ]
+
+# Custom error handlers
+handler404 = 'news.views.handler404'
+handler500 = 'news.views.handler500'

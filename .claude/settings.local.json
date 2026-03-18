@@ -3,7 +3,18 @@
     "allow": [
       "Bash(pkill:*)",
       "Bash(git push:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git -C \"C:\\\\projects\\\\personal\\\\Anime_News_Platform\" log --oneline -20)",
+      "Bash(cat:*)",
+      "Bash(python manage.py:*)",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "Bash(pip install:*)",
+      "Bash(start http://localhost:8080/)",
+      "Bash(taskkill:*)",
+      "Bash(start /B python manage.py runserver 8080)",
+      "Bash(echo:*)",
+      "Bash(git add:*)"
     ]
   }
 }
