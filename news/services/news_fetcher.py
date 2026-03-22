@@ -16,14 +16,14 @@ from typing import Optional
 # Standard ElementTree is vulnerable to XXE (XML External Entity) attacks
 # defusedxml disables: external entities, DTD processing, external DTDs
 # This prevents attackers from reading server files or performing SSRF
+from xml.etree import ElementTree  # Keep for type hints (Element class)
 try:
     from defusedxml.ElementTree import fromstring as safe_fromstring
 except ImportError:
     # Fallback with manual protection (less secure but better than nothing)
-    from xml.etree.ElementTree import fromstring as _unsafe_fromstring
     import warnings
     warnings.warn("defusedxml not installed - XML parsing may be vulnerable to XXE")
-    safe_fromstring = _unsafe_fromstring
+    safe_fromstring = ElementTree.fromstring
 
 import requests
 from bs4 import BeautifulSoup
