@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 from django.conf import settings
 from django.utils import timezone
 
@@ -13,13 +14,16 @@ class Article(models.Model):
 
     title = models.CharField(max_length=200)
     content = models.TextField()
-    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, default='NEWS')
-    published_date = models.DateTimeField(auto_now_add=True)
+    # FIX: Add db_index for frequently filtered/sorted fields
+    # Without index: full table scan O(n) for every category filter
+    # With index: B-tree lookup O(log n) - much faster at scale
+    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, default='NEWS', db_index=True)
+    published_date = models.DateTimeField(auto_now_add=True, db_index=True)  # Used in ORDER BY
     image_url = models.CharField(max_length=500, blank=True, null=True)
 
     # Phase 2: Enhanced fields
-    view_count = models.PositiveIntegerField(default=0)
-    is_featured = models.BooleanField(default=False)
+    view_count = models.PositiveIntegerField(default=0, db_index=True)  # Used for trending sort
+    is_featured = models.BooleanField(default=False, db_index=True)  # Queried on every home page load
 
     class Meta:
         ordering = ['-published_date']
@@ -35,9 +39,15 @@ class Article(models.Model):
         return minutes
 
     def increment_views(self):
-        """Increment view count."""
-        self.view_count += 1
-        self.save(update_fields=['view_count'])
+        """Increment view count atomically.
+
+        FIX: Uses F() expression to perform atomic database-level increment.
+        Old code had race condition: read-modify-write pattern could lose updates.
+        New code: UPDATE article SET view_count = view_count + 1 WHERE id = X
+        This is atomic - database guarantees no lost updates under concurrency.
+        """
+        Article.objects.filter(pk=self.pk).update(view_count=F('view_count') + 1)
+        self.refresh_from_db(fields=['view_count'])  # Sync local object with DB
 
 
 class NewsletterSubscription(models.Model):

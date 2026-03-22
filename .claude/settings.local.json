@@ -14,7 +14,12 @@
       "Bash(taskkill:*)",
       "Bash(start /B python manage.py runserver 8080)",
       "Bash(echo:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add Phase 2 UI, auth, bookmarks, real news fetching, auto-scheduling\n\nPhase 2 UI Enhancements:\n- Dark anime theme with neon accents \\(pink, purple, cyan\\)\n- Hero section with featured article\n- Animated stats counters\n- Sidebar with trending/recent articles\n- Reading progress bar on article detail\n- View count tracking\n- Newsletter subscription form\n\nUser Authentication & Bookmarks:\n- django-allauth integration for user accounts\n- Login, signup, logout with dark theme styling\n- Bookmark model for saving articles\n- Profile page showing user''s saved articles\n- HTMX-powered bookmark toggle button\n\nReal News Fetching:\n- News fetcher service using Jikan API \\(MyAnimeList\\)\n- Reddit RSS integration \\(r/anime, r/animenews\\)\n- Management command for manual fetch\n- Automatic featured article selection\n\nAuto-Scheduling:\n- django-apscheduler for background tasks\n- Automatic news fetch every 6 hours\n- Separate worker process for Render deployment\n\nProduction Deployment:\n- render.yaml with web + worker services\n- PostgreSQL database configuration\n- Security settings \\(HTTPS, HSTS, secure cookies\\)\n- CSRF trusted origins for production domains\n- Whitenoise for static file serving\n\nTesting Infrastructure:\n- pytest with 80% coverage target\n- Model and view tests\n- Factory boy for test fixtures\nEOF\n\\)\")",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(git commit:*)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -20,6 +20,7 @@ lxml>=5.0.0
 
 # Security
 django-ratelimit>=4.1.0
+defusedxml>=0.7.0  # Secure XML parsing - prevents XXE attacks
 
 # Other dependencies
 requests>=2.31.0

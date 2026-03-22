@@ -2,7 +2,10 @@ import logging
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from django_ratelimit.decorators import ratelimit
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
@@ -38,9 +41,12 @@ def home(request):
     paginator = Paginator(articles, ARTICLES_PER_PAGE)
     page_obj = paginator.get_page(page)
 
-    # Stats data
+    # Stats data - use database aggregation for efficiency
     total_articles = Article.objects.count()
-    total_views = sum(a.view_count for a in Article.objects.all())
+    # FIX: Use Sum() aggregation instead of loading all articles into memory
+    # Old code loaded ALL articles just to sum one field - O(n) memory
+    # New code: single SQL query "SELECT SUM(view_count) FROM article" - O(1) memory
+    total_views = Article.objects.aggregate(total=Sum('view_count'))['total'] or 0
     category_counts = Article.objects.values('category').annotate(count=Count('category'))
 
     # Trending articles (by view count)
@@ -107,16 +113,27 @@ def detail(request, article_id):
     return render(request, 'news/detail.html', context)
 
 
+@ratelimit(key='ip', rate='30/m', method='GET', block=True)
 def search(request):
-    """Search articles by title or content."""
+    """Search articles by title or content.
+
+    Rate limited: 30 requests per minute per IP.
+    This prevents search query flooding which could overload the database.
+    """
     query = request.GET.get('q', '').strip()
+
+    # FIX: Limit query length to prevent expensive LIKE queries
+    # A 10,000 character search query would cause database strain
+    if len(query) > 100:
+        query = query[:100]
+
     articles = Article.objects.none()
 
-    if query:
+    if query and len(query) >= 2:  # Minimum 2 chars to prevent broad searches
         articles = Article.objects.filter(
             Q(title__icontains=query) | Q(content__icontains=query)
         ).order_by('-published_date')[:20]
-        logger.debug(f"Search for '{query}' returned {articles.count()} results")
+        logger.info(f"Search for '{query}' returned {articles.count()} results")
 
     context = {
         'articles': articles,
@@ -130,30 +147,53 @@ def search(request):
     return render(request, 'news/search.html', context)
 
 
+@ratelimit(key='ip', rate='5/h', method='POST', block=True)
 @require_POST
 def subscribe_newsletter(request):
-    """Handle newsletter subscription."""
-    email = request.POST.get('email', '').strip()
+    """Handle newsletter subscription.
+
+    Security measures:
+    - Rate limited: 5 subscriptions per hour per IP (prevents spam)
+    - Email validation: Must be valid format
+    - Length check: Max 254 chars (RFC 5321)
+    - Case normalization: test@EMAIL.com -> test@email.com
+    """
+    email = request.POST.get('email', '').strip().lower()  # Normalize case
 
     if not email:
         return JsonResponse({'success': False, 'error': 'Email is required'}, status=400)
 
+    # FIX: Validate email format before saving
+    try:
+        validate_email(email)
+    except ValidationError:
+        return JsonResponse({'success': False, 'error': 'Invalid email format'}, status=400)
+
+    # FIX: Check email length (RFC 5321 limit)
+    if len(email) > 254:
+        return JsonResponse({'success': False, 'error': 'Email address too long'}, status=400)
+
     try:
         subscription, created = NewsletterSubscription.objects.get_or_create(email=email)
         if created:
-            logger.info(f"New newsletter subscription: {email}")
+            logger.info(f"New newsletter subscription: {email[:20]}...")  # Don't log full email
             return JsonResponse({'success': True, 'message': 'Successfully subscribed!'})
         else:
             return JsonResponse({'success': True, 'message': 'You are already subscribed!'})
     except Exception as e:
-        logger.error(f"Newsletter subscription error: {e}")
+        logger.error(f"Newsletter subscription error: {type(e).__name__}")  # Don't log email
         return JsonResponse({'success': False, 'error': 'Something went wrong'}, status=500)
 
 
+@ratelimit(key='user', rate='30/m', method='POST', block=True)
 @login_required
 @require_POST
 def toggle_bookmark(request, article_id):
-    """Toggle bookmark status for an article."""
+    """Toggle bookmark status for an article.
+
+    Rate limited: 30 toggles per minute per user.
+    Prevents bookmark spam/abuse.
+    """
     article = get_object_or_404(Article, pk=article_id)
 
     bookmark, created = Bookmark.objects.get_or_create(

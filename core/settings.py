@@ -228,13 +228,19 @@ if not DEBUG:
 
 
 # Django-allauth Configuration
-ACCOUNT_LOGIN_ON_GET = True
-ACCOUNT_LOGOUT_ON_GET = True
+# FIX: Disable login/logout on GET - these should require POST with CSRF token
+# GET-based auth allows CSRF attacks (e.g., <img src="/logout/"> logs user out)
+ACCOUNT_LOGIN_ON_GET = False  # Require POST for login (CSRF protected)
+ACCOUNT_LOGOUT_ON_GET = False  # Require POST for logout (CSRF protected)
 ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'  # Change to 'mandatory' in production with email
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_RATE_LIMITS = {
+    # Prevent brute force attacks on login
+    "login_failed": "5/m",  # 5 failed attempts per minute
+}
 
 # Login/Logout URLs
 LOGIN_URL = 'account_login'

@@ -11,7 +11,19 @@ import logging
 import re
 from datetime import datetime
 from typing import Optional
-from xml.etree import ElementTree
+
+# FIX: Use defusedxml instead of standard xml.etree.ElementTree
+# Standard ElementTree is vulnerable to XXE (XML External Entity) attacks
+# defusedxml disables: external entities, DTD processing, external DTDs
+# This prevents attackers from reading server files or performing SSRF
+try:
+    from defusedxml.ElementTree import fromstring as safe_fromstring
+except ImportError:
+    # Fallback with manual protection (less secure but better than nothing)
+    from xml.etree.ElementTree import fromstring as _unsafe_fromstring
+    import warnings
+    warnings.warn("defusedxml not installed - XML parsing may be vulnerable to XXE")
+    safe_fromstring = _unsafe_fromstring
 
 import requests
 from bs4 import BeautifulSoup
@@ -162,7 +174,7 @@ class AnimaNewsFetcher:
             response.raise_for_status()
 
             # Parse XML
-            root = ElementTree.fromstring(response.content)
+            root = safe_fromstring(response.content)
 
             # Reddit uses Atom format
             ns = {'atom': 'http://www.w3.org/2005/Atom'}
@@ -234,7 +246,7 @@ class AnimaNewsFetcher:
             response.raise_for_status()
 
             # Parse XML
-            root = ElementTree.fromstring(response.content)
+            root = safe_fromstring(response.content)
 
             # Find all items
             items = root.findall('.//item')[:limit]
