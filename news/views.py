@@ -1,12 +1,22 @@
+"""
+Views for the Anime News Platform.
+
+All view functions have type hints for better IDE support and documentation.
+"""
+
 import logging
+from typing import Union
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
+from django.core.cache import cache
 from django.db.models import Q, Count, Sum
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django_ratelimit.decorators import ratelimit
-from django.http import JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 
@@ -15,9 +25,10 @@ from .models import Article, NewsletterSubscription, Bookmark
 logger = logging.getLogger(__name__)
 
 ARTICLES_PER_PAGE = 9
+CACHE_TIMEOUT = 300  # 5 minutes
 
 
-def home(request):
+def home(request: HttpRequest) -> HttpResponse:
     """Homepage with featured hero, stats, and sidebar."""
     category = request.GET.get('category')
     page = request.GET.get('page', 1)
@@ -41,12 +52,21 @@ def home(request):
     paginator = Paginator(articles, ARTICLES_PER_PAGE)
     page_obj = paginator.get_page(page)
 
-    # Stats data - use database aggregation for efficiency
-    total_articles = Article.objects.count()
-    # FIX: Use Sum() aggregation instead of loading all articles into memory
-    # Old code loaded ALL articles just to sum one field - O(n) memory
-    # New code: single SQL query "SELECT SUM(view_count) FROM article" - O(1) memory
-    total_views = Article.objects.aggregate(total=Sum('view_count'))['total'] or 0
+    # Stats data - use caching for efficiency (5 minute cache)
+    cached_stats = cache.get('homepage_stats')
+    if cached_stats:
+        total_articles = cached_stats['total_articles']
+        total_views = cached_stats['total_views']
+    else:
+        total_articles = Article.objects.count()
+        # Use Sum() aggregation instead of loading all articles into memory
+        total_views = Article.objects.aggregate(total=Sum('view_count'))['total'] or 0
+        # Cache the stats
+        cache.set('homepage_stats', {
+            'total_articles': total_articles,
+            'total_views': total_views,
+        }, CACHE_TIMEOUT)
+
     category_counts = Article.objects.values('category').annotate(count=Count('category'))
 
     # Trending articles (by view count)
@@ -76,7 +96,7 @@ def home(request):
     return render(request, 'news/home.html', context)
 
 
-def detail(request, article_id):
+def detail(request: HttpRequest, article_id: int) -> HttpResponse:
     """Article detail page with related articles and reading experience."""
     article = get_object_or_404(Article, pk=article_id)
 
@@ -114,7 +134,7 @@ def detail(request, article_id):
 
 
 @ratelimit(key='ip', rate='30/m', method='GET', block=True)
-def search(request):
+def search(request: HttpRequest) -> HttpResponse:
     """Search articles by title or content.
 
     Rate limited: 30 requests per minute per IP.
@@ -149,7 +169,7 @@ def search(request):
 
 @ratelimit(key='ip', rate='5/h', method='POST', block=True)
 @require_POST
-def subscribe_newsletter(request):
+def subscribe_newsletter(request: HttpRequest) -> JsonResponse:
     """Handle newsletter subscription.
 
     Security measures:
@@ -181,14 +201,14 @@ def subscribe_newsletter(request):
         else:
             return JsonResponse({'success': True, 'message': 'You are already subscribed!'})
     except Exception as e:
-        logger.error(f"Newsletter subscription error: {type(e).__name__}")  # Don't log email
+        logger.error(f"Newsletter subscription error: {type(e).__name__}", exc_info=True)
         return JsonResponse({'success': False, 'error': 'Something went wrong'}, status=500)
 
 
 @ratelimit(key='user', rate='30/m', method='POST', block=True)
 @login_required
 @require_POST
-def toggle_bookmark(request, article_id):
+def toggle_bookmark(request: HttpRequest, article_id: int) -> Union[HttpResponse, JsonResponse]:
     """Toggle bookmark status for an article.
 
     Rate limited: 30 toggles per minute per user.
@@ -225,7 +245,7 @@ def toggle_bookmark(request, article_id):
 
 
 @login_required
-def profile(request):
+def profile(request: HttpRequest) -> HttpResponse:
     """User profile page with bookmarked articles."""
     bookmarks = Bookmark.objects.filter(user=request.user).select_related('article')
 
@@ -237,11 +257,24 @@ def profile(request):
     return render(request, 'news/profile.html', context)
 
 
-def handler404(request, exception):
+def handler404(request: HttpRequest, exception: Exception) -> HttpResponse:
     """Custom 404 error handler."""
     return render(request, '404.html', status=404)
 
 
-def handler500(request):
+def handler500(request: HttpRequest) -> HttpResponse:
     """Custom 500 error handler."""
     return render(request, '500.html', status=500)
+
+
+# Cache invalidation signal handlers
+@receiver(post_save, sender=Article)
+def invalidate_stats_cache_on_save(sender, instance, **kwargs):
+    """Invalidate homepage stats cache when an article is saved."""
+    cache.delete('homepage_stats')
+
+
+@receiver(post_delete, sender=Article)
+def invalidate_stats_cache_on_delete(sender, instance, **kwargs):
+    """Invalidate homepage stats cache when an article is deleted."""
+    cache.delete('homepage_stats')

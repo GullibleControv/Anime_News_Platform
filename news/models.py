@@ -20,6 +20,7 @@ class Article(models.Model):
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, default='NEWS', db_index=True)
     published_date = models.DateTimeField(auto_now_add=True, db_index=True)  # Used in ORDER BY
     image_url = models.CharField(max_length=500, blank=True, null=True)
+    source_url = models.URLField(max_length=500, blank=True, null=True, help_text="Original source URL")
 
     # Phase 2: Enhanced fields
     view_count = models.PositiveIntegerField(default=0, db_index=True)  # Used for trending sort

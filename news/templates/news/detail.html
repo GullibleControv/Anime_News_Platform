@@ -113,6 +113,25 @@
                 {{ article.content|linebreaks }}
             </div>
 
+            <!-- Source Link -->
+            {% if article.source_url %}
+            <div class="source-link" style="margin-top: var(--space-6); padding: var(--space-4); background: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary);">
+                <p class="text-muted" style="font-size: var(--text-sm); margin-bottom: var(--space-2);">Original Source</p>
+                <a href="{{ article.source_url }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="source-link__url"
+                   style="color: var(--accent-tertiary); display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    {{ article.source_url|truncatechars:50 }}
+                </a>
+            </div>
+            {% endif %}
+
             <!-- Share Section -->
             <div class="share-section" style="margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-color);">
                 <p class="text-muted" style="font-size: var(--text-sm); margin-bottom: var(--space-3);">Share this article</p>
